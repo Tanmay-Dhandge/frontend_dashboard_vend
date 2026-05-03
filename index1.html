@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VendBot 3000 — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0F14;--surface:#141720;--card:#181C26;
+  --border:#252A38;--border2:#2E3447;
+  --text:#E8EAF0;--muted:#6B7390;--muted2:#3D4255;
+  --accent:#4F8EFF;--green:#22C97B;--red:#FF4D6A;--amber:#FFB547;--cyan:#38D9D9;
+  --radius:10px;--radius-sm:7px;
+  --font:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html{font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.5;overflow-x:hidden}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-family:var(--mono);font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:10px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.logo em{color:var(--accent);font-style:normal}
+.header-right{display:flex;align-items:center;gap:16px}
+.live-badge{display:flex;align-items:center;gap:7px;font-size:0.7rem;font-weight:600;color:var(--green);font-family:var(--mono)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}50%{opacity:.3;box-shadow:none}}
+.conn-pill{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);font-size:0.68rem;color:var(--muted);font-family:var(--mono);background:var(--card);transition:all .3s}
+.conn-pip{width:5px;height:5px;border-radius:50%;background:var(--muted2);transition:background .3s}
+.conn-pill.connected .conn-pip{background:var(--green)}
+.conn-pill.connected{color:var(--green);border-color:rgba(34,201,123,.3)}
+.conn-pill.error .conn-pip{background:var(--red)}
+.conn-pill.error{color:var(--red);border-color:rgba(255,77,106,.3)}
+.clock{font-family:var(--mono);font-size:0.72rem;color:var(--muted)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 56px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
+.sidebar-section{padding:0 12px;margin-bottom:8px}
+.sidebar-label{font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--muted2);text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);font-size:.8rem;font-weight:500;transition:all .15s;border:1px solid transparent;margin-bottom:2px;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--card)}
+.nav-item.active{color:var(--accent);background:rgba(79,142,255,.08);border-color:rgba(79,142,255,.2)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.btn-sidebar{width:100%;padding:8px;border-radius:var(--radius-sm);font-family:var(--font);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .18s;border:1px solid}
+.btn-refresh{background:rgba(79,142,255,.1);border-color:rgba(79,142,255,.25);color:var(--accent)}
+.btn-refresh:hover{background:rgba(79,142,255,.2);border-color:rgba(79,142,255,.45)}
+.btn-refresh:active{transform:scale(.97)}
+
+/* MAIN */
+.main{padding:24px 28px;overflow-y:auto}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+.metric:hover{border-color:var(--border2)}
+.metric-label{font-size:.65rem;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.metric-val{font-size:1.65rem;font-weight:600;line-height:1;margin-bottom:6px;font-family:var(--mono)}
+.metric-sub{font-size:.68rem;color:var(--muted)}
+.metric-sub.up{color:var(--green)}
+.metric-sub.warn{color:var(--amber)}
+.metric-sub.down{color:var(--red)}
+.metric-icon{position:absolute;top:14px;right:16px;font-size:1.1rem;opacity:.2}
+
+/* SECTION TITLE */
+.section-title{font-size:.68rem;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 280px;gap:12px;margin-bottom:24px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-wrap{position:relative;width:100%;height:200px}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--muted)}
+.legend-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* STOCK GRID */
+.stock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
+.stock-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .2s}
+.stock-card:hover{border-color:var(--border2)}
+.stock-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.stock-name{font-size:.82rem;font-weight:600}
+.stock-id{font-size:.65rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.pill{font-size:.6rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.pill-ok{background:rgba(34,201,123,.12);color:var(--green);border:1px solid rgba(34,201,123,.25)}
+.pill-warn{background:rgba(255,181,71,.12);color:var(--amber);border:1px solid rgba(255,181,71,.25)}
+.pill-crit{background:rgba(255,77,106,.12);color:var(--red);border:1px solid rgba(255,77,106,.25)}
+.stock-bar-bg{background:var(--bg);border-radius:4px;height:5px;overflow:hidden;margin-bottom:8px}
+.stock-bar{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.stock-bottom{display:flex;justify-content:space-between;align-items:center}
+.stock-count{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+.stock-pct{font-size:.7rem;font-weight:600;font-family:var(--mono)}
+
+/* ALERT */
+.alert{background:rgba(255,181,71,.07);border:1px solid rgba(255,181,71,.2);border-radius:var(--radius-sm);padding:10px 14px;font-size:.75rem;color:var(--amber);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.alert-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+
+/* TABLE */
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.table-header-title{font-size:.82rem;font-weight:600}
+.table-meta{display:flex;align-items:center;gap:10px}
+.table-count{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
+.btn-load-more{padding:5px 14px;border-radius:var(--radius-sm);background:rgba(79,142,255,.1);border:1px solid rgba(79,142,255,.2);color:var(--accent);font-family:var(--font);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-load-more:hover{background:rgba(79,142,255,.2)}
+.btn-load-more:disabled{opacity:.4;cursor:not-allowed}
+.txn-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.txn-table th{text-align:left;padding:10px 20px;font-size:.62rem;font-weight:600;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);background:rgba(255,255,255,.01)}
+.txn-table td{padding:12px 20px;border-bottom:1px solid rgba(37,42,56,.6);vertical-align:middle}
+.txn-table tr:last-child td{border-bottom:none}
+.txn-table tbody tr{transition:background .12s}
+.txn-table tbody tr:hover td{background:rgba(79,142,255,.04)}
+.txn-new td{animation:rowFlash 2s ease-out}
+@keyframes rowFlash{0%{background:rgba(79,142,255,.18)}100%{background:transparent}}
+.mono{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:.62rem;padding:2px 7px;border-radius:5px;background:rgba(79,142,255,.08);border:1px solid rgba(79,142,255,.15);color:var(--accent);font-family:var(--mono)}
+.badge-ok{color:var(--green);font-size:.68rem;font-weight:600;font-family:var(--mono)}
+.badge-fail{color:var(--red);font-size:.68rem;font-weight:600;font-family:var(--mono)}
+.amt{font-family:var(--mono);font-size:.78rem;font-weight:600}
+
+/* RESTOCK */
+.restock-list{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.restock-item{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(37,42,56,.6)}
+.restock-item:last-child{border-bottom:none}
+.restock-left{display:flex;align-items:center;gap:12px}
+.restock-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.restock-name{font-size:.8rem;font-weight:600}
+.restock-sub{font-size:.65rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.restock-right{display:flex;align-items:center;gap:10px}
+.btn-restock{padding:5px 14px;border-radius:var(--radius-sm);background:rgba(79,142,255,.1);border:1px solid rgba(79,142,255,.25);color:var(--accent);font-family:var(--font);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-restock:hover{background:rgba(79,142,255,.2)}
+.btn-restock:active{transform:scale(.95)}
+.btn-restock:disabled{opacity:.4;cursor:not-allowed}
+
+/* LOG */
+.log-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px}
+.log-feed{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;font-family:var(--mono);font-size:.65rem}
+.log-line{display:flex;gap:10px;padding:2px 0;line-height:1.6}
+.log-ts{color:var(--muted2);flex-shrink:0}
+.log-ok{color:var(--green)}.log-info{color:var(--muted)}.log-err{color:var(--red)}.log-warn{color:var(--amber)}.log-mqtt{color:var(--cyan)}
+
+/* TABS */
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ERROR BANNER */
+.err-banner{background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:.75rem;color:var(--red);margin-bottom:16px;display:none;align-items:center;gap:10px}
+.err-banner.show{display:flex}
+
+/* SKELETON */
+.skeleton{background:var(--border);border-radius:4px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.8}}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .metrics{grid-template-columns:1fr}
+  .stock-grid{grid-template-columns:1fr}
+  .main{padding:16px}
+  .header{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading dashboard…</div>
+</div>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Vend<em>Bot</em> <span style="color:var(--muted)">/ admin</span>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="conn-pill" id="connPill"><div class="conn-pip"></div><span id="connLabel">Connecting…</span></div>
+    <div class="clock" id="clock"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Monitor</div>
+      <div class="nav-item active" onclick="switchTab('overview',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" onclick="switchTab('transactions',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M2 8h8M2 12h5"/></svg>
+        Transactions
+      </div>
+      <div class="nav-item" onclick="switchTab('stock',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="8" width="4" height="6" rx="1"/><rect x="6" y="5" width="4" height="9" rx="1"/><rect x="10" y="2" width="4" height="12" rx="1"/></svg>
+        Stock
+      </div>
+      <div class="nav-item" onclick="switchTab('log',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/></svg>
+        Activity log
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-sidebar btn-refresh" onclick="refreshAll()">↺ Refresh</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="err-banner" id="errBanner"><span>⚠</span><span id="errMsg">Could not reach backend.</span></div>
+
+    <!-- OVERVIEW -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="metrics" id="metricCards"></div>
+      <div class="alert" id="alertStrip" style="display:none"><div class="alert-dot"></div>Low stock alert — one or more items need restocking</div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="section-title">Revenue — last 7 days</div>
+          <div class="chart-wrap"><canvas id="revChart" role="img" aria-label="Bar chart of daily revenue over last 7 days">Daily revenue for the past week.</canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="section-title">Sales by product</div>
+          <div id="donutLegend" class="legend"></div>
+          <div class="chart-wrap" style="height:160px"><canvas id="itemChart" role="img" aria-label="Doughnut chart showing units sold per product">Sales distribution by product.</canvas></div>
+        </div>
+      </div>
+      <div class="section-title">Stock status</div>
+      <div class="stock-grid" id="stockGridOverview"></div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="tab-panel" id="tab-transactions">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-header-title">All transactions</div>
+          <div class="table-meta">
+            <div class="table-count" id="txnCount">—</div>
+            <button class="btn-load-more" id="btnLoadMore" onclick="loadMoreTxns()">Load more</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="txn-table">
+            <thead><tr>
+              <th>Time</th><th>TXN ID</th><th>Items</th><th>Amount</th><th>Method</th><th>Status</th>
+            </tr></thead>
+            <tbody id="txnBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div class="tab-panel" id="tab-stock">
+      <div class="section-title">Inventory levels</div>
+      <div class="stock-grid" id="stockGridFull" style="margin-bottom:24px"></div>
+      <div class="section-title">Restock management</div>
+      <div class="restock-list" id="restockList"></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="tab-panel" id="tab-log">
+      <div class="log-card">
+        <div class="section-title">Activity log</div>
+        <div class="log-feed" id="logFeed"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════ CONFIG ═══════════════════════ */
+// ⚠ Change this to your deployed backend URL
+const API_BASE = 'https://backend-pro-hitm.onrender.com';
+
+const MQTT_BROKER   = 'wss://366c887e88bf40c496821b5e646d3a12.s1.eu.hivemq.cloud:8884/mqtt';
+const MQTT_USERNAME = 'hivemq.webclient.1773649961783';
+const MQTT_PASSWORD = 'FklRd4q@2&7DUc,.AZx6';
+
+const CHART_COLORS = ['#22C97B','#FF6B47','#FFB547','#4F8EFF'];
+
+/* ═══════════════════════ STATE ═══════════════════════ */
+let summary      = null;   // from /api/summary
+let transactions = [];     // from /api/transactions
+let stockData    = [];     // from /api/stock
+let txnOffset    = 0;
+const TXN_LIMIT  = 20;
+let txnTotal     = 0;
+let revChart, donutChart;
+
+/* ═══════════════════════ BOOT ═══════════════════════ */
+async function init() {
+  showLoading(true);
+  await refreshAll();
+  showLoading(false);
+  connectMQTT();
+}
+
+async function refreshAll() {
+  try {
+    txnOffset = 0;
+    transactions = [];
+    await Promise.all([fetchSummary(), fetchTransactions(), fetchStock()]);
+    renderAll();
+    hideError();
+    log('Dashboard refreshed from API', 'ok');
+  } catch(e) {
+    showError('Backend unreachable: ' + e.message);
+    log('Refresh failed: ' + e.message, 'err');
+  }
+}
+
+/* ═══════════════════════ API CALLS ═══════════════════════ */
+async function fetchSummary() {
+  const r = await fetch(`${API_BASE}/api/summary`);
+  if (!r.ok) throw new Error('summary ' + r.status);
+  summary = await r.json();
+  stockData = summary.stock || [];
+}
+
+async function fetchTransactions() {
+  const r = await fetch(`${API_BASE}/api/transactions?limit=${TXN_LIMIT}&offset=${txnOffset}`);
+  if (!r.ok) throw new Error('transactions ' + r.status);
+  const data = await r.json();
+  transactions = [...transactions, ...data.transactions];
+  txnTotal = data.total;
+  txnOffset += data.transactions.length;
+}
+
+async function fetchStock() {
+  const r = await fetch(`${API_BASE}/api/stock`);
+  if (!r.ok) throw new Error('stock ' + r.status);
+  const data = await r.json();
+  stockData = data.stock || [];
+}
+
+async function loadMoreTxns() {
+  if (txnOffset >= txnTotal) return;
+  const btn = document.getElementById('btnLoadMore');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  try {
+    await fetchTransactions();
+    renderTxnTable();
+  } catch(e) {
+    log('Load more failed: ' + e.message, 'err');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Load more';
+}
+
+/* ═══════════════════════ RENDER ALL ═══════════════════════ */
+function renderAll() {
+  renderMetrics();
+  renderCharts();
+  renderStockGrid('stockGridOverview');
+  renderStockGrid('stockGridFull');
+  renderTxnTable();
+  renderRestockList();
+  checkAlerts();
+}
+
+/* ═══════════════════════ METRICS ═══════════════════════ */
+function renderMetrics() {
+  if (!summary) return;
+  const { totalRevenue, successTxns, failedTxns, totalUnitsSold, todayRevenue } = summary;
+  const lowStock = stockData.filter(s => s.stock <= 1).length;
+
+  const m = [
+    { label:'Total revenue',   val:'₹'+totalRevenue,   sub:'₹'+todayRevenue+' today',          cls:'up',  icon:'₹' },
+    { label:'Transactions',    val:successTxns,         sub:failedTxns+' failed',               cls:failedTxns?'warn':'up', icon:'#' },
+    { label:'Units sold',      val:totalUnitsSold,      sub:'across all products',              cls:'up',  icon:'U' },
+    { label:'Low stock items', val:lowStock,            sub:lowStock?'Action needed':'All clear',cls:lowStock?'warn':'up', icon:'!' },
+  ];
+
+  document.getElementById('metricCards').innerHTML = m.map(x => `
+    <div class="metric">
+      <div class="metric-label">${x.label}</div>
+      <div class="metric-val">${x.val}</div>
+      <div class="metric-sub ${x.cls}">${x.sub}</div>
+      <div class="metric-icon">${x.icon}</div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════ CHARTS ═══════════════════════ */
+function renderCharts() {
+  if (!summary) return;
+  const { revByDay, soldBySlot } = summary;
+
+  if (revChart) revChart.destroy();
+  revChart = new Chart(document.getElementById('revChart'), {
+    type: 'bar',
+    data: {
+      labels: revByDay.map(d => d.label),
+      datasets: [{
+        label:'Revenue (₹)', data: revByDay.map(d => d.revenue),
+        backgroundColor:'rgba(79,142,255,.7)', hoverBackgroundColor:'rgba(79,142,255,1)',
+        borderRadius:5, borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false}, ticks:{color:'#6B7390',font:{size:11},autoSkip:false}},
+        y:{grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#6B7390',font:{size:11},callback:v=>'₹'+v}},
+      }
+    }
+  });
+
+  const slots   = stockData.map(s => s.slot);
+  const names   = stockData.map(s => s.name);
+  const donutData = slots.map(sl => soldBySlot[sl] || 0);
+  const totalSold = donutData.reduce((a,b)=>a+b,0) || 1;
+
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('itemChart'), {
+    type: 'doughnut',
+    data: {
+      labels: names,
+      datasets:[{ data:donutData, backgroundColor:CHART_COLORS, borderWidth:2, borderColor:'#181C26' }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{legend:{display:false}} }
+  });
+
+  document.getElementById('donutLegend').innerHTML = names.map((n,i) => `
+    <span class="legend-item">
+      <span class="legend-sq" style="background:${CHART_COLORS[i]}"></span>
+      ${n.split(' ')[0]} ${Math.round(donutData[i]/totalSold*100)}%
+    </span>`).join('');
+}
+
+/* ═══════════════════════ STOCK GRID ═══════════════════════ */
+function renderStockGrid(elId) {
+  const el = document.getElementById(elId); if (!el || !stockData.length) return;
+  el.innerHTML = stockData.map(s => {
+    const pct    = Math.round((s.stock / s.maxStock) * 100);
+    const status = s.stock === 0 ? 'crit' : s.stock <= 1 ? 'warn' : 'ok';
+    const label  = s.stock === 0 ? 'Out of stock' : s.stock <= 1 ? 'Critical' : 'In stock';
+    const clr    = s.stock === 0 ? '#FF4D6A' : s.stock <= 1 ? '#FFB547' : '#22C97B';
+    return `
+    <div class="stock-card">
+      <div class="stock-top">
+        <div><div class="stock-name">${s.name}</div><div class="stock-id">${s.slot}</div></div>
+        <span class="pill pill-${status}">${label}</span>
+      </div>
+      <div class="stock-bar-bg"><div class="stock-bar" style="width:${pct}%;background:${clr}"></div></div>
+      <div class="stock-bottom">
+        <span class="stock-count">${s.stock} / ${s.maxStock} units</span>
+        <span class="stock-pct" style="color:${clr}">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════ TXN TABLE ═══════════════════════ */
+function renderTxnTable(highlightId=null) {
+  const btn = document.getElementById('btnLoadMore');
+  document.getElementById('txnCount').textContent = `${transactions.length} / ${txnTotal} records`;
+  btn.style.display = txnOffset >= txnTotal ? 'none' : 'inline-block';
+
+  document.getElementById('txnBody').innerHTML = transactions.map(t => {
+    const time    = new Date(t.timestamp).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const date    = new Date(t.timestamp).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    const shortId = '…' + (t.transactionId || t._id || '').slice(-8);
+    const chips   = (t.items||[]).map(i=>`<span class="chip">${i.slot}×${i.qty}</span>`).join('');
+    const isNew   = t.transactionId === highlightId ? 'txn-new' : '';
+    return `<tr class="${isNew}">
+      <td><div style="font-size:.72rem;font-weight:600">${time}</div><div class="mono">${date}</div></td>
+      <td class="mono">${shortId}</td>
+      <td><div class="chips">${chips}</div></td>
+      <td class="amt">₹${t.totalAmount}</td>
+      <td class="mono" style="color:var(--muted)">${t.paymentMethod||'ONLINE'}</td>
+      <td class="${t.status==='SUCCESS'?'badge-ok':'badge-fail'}">${t.status}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════ RESTOCK ═══════════════════════ */
+function renderRestockList() {
+  if (!stockData.length) return;
+  document.getElementById('restockList').innerHTML = stockData.map(s => {
+    const needed = s.maxStock - s.stock;
+    const status = s.stock === 0 ? 'crit' : s.stock <= 1 ? 'warn' : 'ok';
+    const clr    = s.stock === 0 ? '#FF4D6A' : s.stock <= 1 ? '#FFB547' : '#22C97B';
+    const label  = status === 'crit' ? 'Urgent' : status === 'warn' ? 'Soon' : 'OK';
+    return `
+    <div class="restock-item">
+      <div class="restock-left">
+        <div class="restock-dot" style="background:${clr}"></div>
+        <div>
+          <div class="restock-name">${s.name}</div>
+          <div class="restock-sub">Slot ${s.slot} · ${s.stock}/${s.maxStock} remaining</div>
+        </div>
+      </div>
+      <div class="restock-right">
+        <span class="pill pill-${status}">${label}</span>
+        ${needed > 0
+          ? `<button class="btn-restock" id="rst_${s.slot}" onclick="restock('${s.slot}')">Restock +${needed}</button>`
+          : `<span style="font-size:.68rem;color:var(--muted)">Full</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function restock(slot) {
+  const btn = document.getElementById('rst_'+slot);
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating…'; }
+  try {
+    const r = await fetch(`${API_BASE}/api/stock/restock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot }),
+    });
+    if (!r.ok) throw new Error(r.status);
+    log(`Restocked slot ${slot}`, 'ok');
+    await fetchStock();
+    renderStockGrid('stockGridOverview');
+    renderStockGrid('stockGridFull');
+    renderRestockList();
+    checkAlerts();
+    renderMetrics();
+  } catch(e) {
+    log('Restock failed: ' + e.message, 'err');
+    if (btn) { btn.disabled = false; btn.textContent = 'Retry'; }
+  }
+}
+
+/* ═══════════════════════ ALERTS ═══════════════════════ */
+function checkAlerts() {
+  const low = stockData.some(s => s.stock <= 1);
+  document.getElementById('alertStrip').style.display = low ? 'flex' : 'none';
+}
+
+/* ═══════════════════════ MQTT (real-time push) ═══════════════════════ */
+function connectMQTT() {
+  log('Connecting to MQTT…', 'info');
+  const client = mqtt.connect(MQTT_BROKER, {
+    clientId: 'admin_' + Math.random().toString(36).slice(2,8),
+    clean: true, reconnectPeriod: 5000,
+    username: MQTT_USERNAME, password: MQTT_PASSWORD,
+  });
+
+  client.on('connect', () => {
+    setConn('connected', 'Connected');
+    log('MQTT connected', 'ok');
+    client.subscribe('vendbot/order',   { qos:1 });
+    client.subscribe('vendbot/payment', { qos:1 });
+    log('Subscribed → vendbot/order, vendbot/payment', 'mqtt');
+  });
+  client.on('error',   e => { setConn('error','Error');   log('MQTT error: '+e.message,'err') });
+  client.on('offline', () => { setConn('','Offline'); log('MQTT offline — retrying…','warn') });
+
+  client.on('message', async (topic, msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      log(`← ${topic}`, 'mqtt');
+
+      if (topic === 'vendbot/order' && data.items) {
+        /* prepend new txn to local list */
+        const txn = {
+          transactionId: data.transactionId,
+          timestamp:     data.timestamp || new Date().toISOString(),
+          items:         data.items,
+          totalAmount:   data.totalAmount,
+          paymentMethod: data.paymentMethod || 'ONLINE',
+          status:        'SUCCESS',
+        };
+        transactions.unshift(txn);
+        txnTotal++;
+
+        log(`New order ₹${txn.totalAmount} — ${txn.items.map(i=>i.name+'×'+i.qty).join(', ')}`, 'ok');
+
+        /* re-fetch summary + stock from server (authoritative) */
+        await Promise.all([fetchSummary(), fetchStock()]);
+        renderMetrics();
+        renderCharts();
+        renderStockGrid('stockGridOverview');
+        renderStockGrid('stockGridFull');
+        renderRestockList();
+        renderTxnTable(txn.transactionId);
+        checkAlerts();
+      }
+    } catch(e) {
+      log('Parse error: '+e.message, 'err');
+    }
+  });
+}
+
+/* ═══════════════════════ TABS ═══════════════════════ */
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ═══════════════════════ HELPERS ═══════════════════════ */
+function setConn(cls, label) {
+  document.getElementById('connPill').className = 'conn-pill ' + cls;
+  document.getElementById('connLabel').textContent = label;
+}
+
+function log(msg, type='info') {
+  const feed = document.getElementById('logFeed');
+  const ts   = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const el   = document.createElement('div');
+  el.className = 'log-line';
+  el.innerHTML = `<span class="log-ts">[${ts}]</span><span class="log-${type}">${msg}</span>`;
+  feed.prepend(el);
+  while (feed.children.length > 100) feed.removeChild(feed.lastChild);
+}
+
+function showLoading(on) {
+  document.getElementById('loadingOverlay').classList.toggle('hidden', !on);
+}
+
+function showError(msg) {
+  const b = document.getElementById('errBanner');
+  document.getElementById('errMsg').textContent = msg;
+  b.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errBanner').classList.remove('show');
+}
+
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+}
+
+/* ═══════════════════════ START ═══════════════════════ */
+init();
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
