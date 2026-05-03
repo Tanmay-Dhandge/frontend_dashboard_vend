@@ -23,7 +23,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 
-/* HEADER */
 .header{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{font-family:var(--mono);font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:10px}
 .logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
@@ -40,7 +39,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .conn-pill.error{color:var(--red);border-color:rgba(255,77,106,.3)}
 .clock{font-family:var(--mono);font-size:0.72rem;color:var(--muted)}
 
-/* LAYOUT */
 .layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 56px)}
 .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
 .sidebar-section{padding:0 12px;margin-bottom:8px}
@@ -56,17 +54,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .btn-refresh:hover{background:rgba(79,142,255,.2);border-color:rgba(79,142,255,.45)}
 .btn-refresh:active{transform:scale(.97)}
 
-/* MAIN */
 .main{padding:24px 28px;overflow-y:auto}
 
-/* LOADING OVERLAY */
 .loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
 .loading-overlay.hidden{opacity:0;pointer-events:none}
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
 
-/* METRICS */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .metric{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 16px;position:relative;overflow:hidden;transition:border-color .2s}
 .metric:hover{border-color:var(--border2)}
@@ -78,20 +73,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .metric-sub.down{color:var(--red)}
 .metric-icon{position:absolute;top:14px;right:16px;font-size:1.1rem;opacity:.2}
 
-/* SECTION TITLE */
 .section-title{font-size:.68rem;font-weight:600;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
 
-/* CHARTS */
 .charts-row{display:grid;grid-template-columns:1fr 280px;gap:12px;margin-bottom:24px}
 .chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
 .chart-wrap{position:relative;width:100%;height:200px}
 
-/* LEGEND */
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--muted)}
 .legend-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
 
-/* STOCK GRID */
 .stock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
 .stock-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .2s}
 .stock-card:hover{border-color:var(--border2)}
@@ -108,11 +99,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .stock-count{font-size:.68rem;color:var(--muted);font-family:var(--mono)}
 .stock-pct{font-size:.7rem;font-weight:600;font-family:var(--mono)}
 
-/* ALERT */
 .alert{background:rgba(255,181,71,.07);border:1px solid rgba(255,181,71,.2);border-radius:var(--radius-sm);padding:10px 14px;font-size:.75rem;color:var(--amber);margin-bottom:20px;display:flex;align-items:center;gap:10px}
 .alert-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
 
-/* TABLE */
 .table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .table-header-title{font-size:.82rem;font-weight:600}
@@ -136,7 +125,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .badge-fail{color:var(--red);font-size:.68rem;font-weight:600;font-family:var(--mono)}
 .amt{font-family:var(--mono);font-size:.78rem;font-weight:600}
 
-/* RESTOCK */
 .restock-list{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .restock-item{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(37,42,56,.6)}
 .restock-item:last-child{border-bottom:none}
@@ -150,22 +138,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .btn-restock:active{transform:scale(.95)}
 .btn-restock:disabled{opacity:.4;cursor:not-allowed}
 
-/* LOG */
 .log-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px}
 .log-feed{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;font-family:var(--mono);font-size:.65rem}
 .log-line{display:flex;gap:10px;padding:2px 0;line-height:1.6}
 .log-ts{color:var(--muted2);flex-shrink:0}
 .log-ok{color:var(--green)}.log-info{color:var(--muted)}.log-err{color:var(--red)}.log-warn{color:var(--amber)}.log-mqtt{color:var(--cyan)}
 
-/* TABS */
 .tab-panel{display:none}
 .tab-panel.active{display:block}
 
-/* ERROR BANNER */
 .err-banner{background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:.75rem;color:var(--red);margin-bottom:16px;display:none;align-items:center;gap:10px}
 .err-banner.show{display:flex}
 
-/* SKELETON */
 .skeleton{background:var(--border);border-radius:4px;animation:shimmer 1.5s infinite}
 @keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.8}}
 
@@ -185,7 +169,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </head>
 <body>
 
-<!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
   <div class="loading-text">Loading dashboard…</div>
@@ -291,8 +274,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </div>
 
 <script>
-/* ═══════════════════════ CONFIG ═══════════════════════ */
-// ⚠ Change this to your deployed backend URL
 const API_BASE = 'https://tmkc-sarvadnya.onrender.com';
 
 const MQTT_BROKER   = 'wss://366c887e88bf40c496821b5e646d3a12.s1.eu.hivemq.cloud:8884/mqtt';
@@ -301,16 +282,14 @@ const MQTT_PASSWORD = 'FklRd4q@2&7DUc,.AZx6';
 
 const CHART_COLORS = ['#22C97B','#FF6B47','#FFB547','#4F8EFF'];
 
-/* ═══════════════════════ STATE ═══════════════════════ */
-let summary      = null;   // from /api/summary
-let transactions = [];     // from /api/transactions
-let stockData    = [];     // from /api/stock
+let summary      = null;
+let transactions = [];
+let stockData    = [];
 let txnOffset    = 0;
 const TXN_LIMIT  = 20;
 let txnTotal     = 0;
 let revChart, donutChart;
 
-/* ═══════════════════════ BOOT ═══════════════════════ */
 async function init() {
   showLoading(true);
   await refreshAll();
@@ -332,7 +311,6 @@ async function refreshAll() {
   }
 }
 
-/* ═══════════════════════ API CALLS ═══════════════════════ */
 async function fetchSummary() {
   const r = await fetch(`${API_BASE}/api/summary`);
   if (!r.ok) throw new Error('summary ' + r.status);
@@ -356,6 +334,7 @@ async function fetchStock() {
   stockData = data.stock || [];
 }
 
+// FIX: Re-enable button on success, not just on error
 async function loadMoreTxns() {
   if (txnOffset >= txnTotal) return;
   const btn = document.getElementById('btnLoadMore');
@@ -367,11 +346,11 @@ async function loadMoreTxns() {
   } catch(e) {
     log('Load more failed: ' + e.message, 'err');
   }
+  // FIX: always re-enable and restore label regardless of success/failure
   btn.disabled = false;
   btn.textContent = 'Load more';
 }
 
-/* ═══════════════════════ RENDER ALL ═══════════════════════ */
 function renderAll() {
   renderMetrics();
   renderCharts();
@@ -382,7 +361,6 @@ function renderAll() {
   checkAlerts();
 }
 
-/* ═══════════════════════ METRICS ═══════════════════════ */
 function renderMetrics() {
   if (!summary) return;
   const { totalRevenue, successTxns, failedTxns, totalUnitsSold, todayRevenue } = summary;
@@ -404,10 +382,13 @@ function renderMetrics() {
     </div>`).join('');
 }
 
-/* ═══════════════════════ CHARTS ═══════════════════════ */
+// FIX: Guard against missing/empty revByDay or soldBySlot before rendering charts
 function renderCharts() {
   if (!summary) return;
-  const { revByDay, soldBySlot } = summary;
+  const revByDay   = summary.revByDay   || [];
+  const soldBySlot = summary.soldBySlot || {};
+
+  if (!revByDay.length) return;
 
   if (revChart) revChart.destroy();
   revChart = new Chart(document.getElementById('revChart'), {
@@ -430,8 +411,10 @@ function renderCharts() {
     }
   });
 
-  const slots   = stockData.map(s => s.slot);
-  const names   = stockData.map(s => s.name);
+  if (!stockData.length) return;
+
+  const slots    = stockData.map(s => s.slot);
+  const names    = stockData.map(s => s.name);
   const donutData = slots.map(sl => soldBySlot[sl] || 0);
   const totalSold = donutData.reduce((a,b)=>a+b,0) || 1;
 
@@ -452,7 +435,6 @@ function renderCharts() {
     </span>`).join('');
 }
 
-/* ═══════════════════════ STOCK GRID ═══════════════════════ */
 function renderStockGrid(elId) {
   const el = document.getElementById(elId); if (!el || !stockData.length) return;
   el.innerHTML = stockData.map(s => {
@@ -475,7 +457,6 @@ function renderStockGrid(elId) {
   }).join('');
 }
 
-/* ═══════════════════════ TXN TABLE ═══════════════════════ */
 function renderTxnTable(highlightId=null) {
   const btn = document.getElementById('btnLoadMore');
   document.getElementById('txnCount').textContent = `${transactions.length} / ${txnTotal} records`;
@@ -498,7 +479,6 @@ function renderTxnTable(highlightId=null) {
   }).join('');
 }
 
-/* ═══════════════════════ RESTOCK ═══════════════════════ */
 function renderRestockList() {
   if (!stockData.length) return;
   document.getElementById('restockList').innerHTML = stockData.map(s => {
@@ -548,13 +528,11 @@ async function restock(slot) {
   }
 }
 
-/* ═══════════════════════ ALERTS ═══════════════════════ */
 function checkAlerts() {
   const low = stockData.some(s => s.stock <= 1);
   document.getElementById('alertStrip').style.display = low ? 'flex' : 'none';
 }
 
-/* ═══════════════════════ MQTT (real-time push) ═══════════════════════ */
 function connectMQTT() {
   log('Connecting to MQTT…', 'info');
   const client = mqtt.connect(MQTT_BROKER, {
@@ -579,7 +557,6 @@ function connectMQTT() {
       log(`← ${topic}`, 'mqtt');
 
       if (topic === 'vendbot/order' && data.items) {
-        /* prepend new txn to local list */
         const txn = {
           transactionId: data.transactionId,
           timestamp:     data.timestamp || new Date().toISOString(),
@@ -593,7 +570,6 @@ function connectMQTT() {
 
         log(`New order ₹${txn.totalAmount} — ${txn.items.map(i=>i.name+'×'+i.qty).join(', ')}`, 'ok');
 
-        /* re-fetch summary + stock from server (authoritative) */
         await Promise.all([fetchSummary(), fetchStock()]);
         renderMetrics();
         renderCharts();
@@ -609,7 +585,6 @@ function connectMQTT() {
   });
 }
 
-/* ═══════════════════════ TABS ═══════════════════════ */
 function switchTab(name, el) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -617,7 +592,6 @@ function switchTab(name, el) {
   el.classList.add('active');
 }
 
-/* ═══════════════════════ HELPERS ═══════════════════════ */
 function setConn(cls, label) {
   document.getElementById('connPill').className = 'conn-pill ' + cls;
   document.getElementById('connLabel').textContent = label;
@@ -651,7 +625,6 @@ function updateClock() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
 }
 
-/* ═══════════════════════ START ═══════════════════════ */
 init();
 updateClock();
 setInterval(updateClock, 1000);
