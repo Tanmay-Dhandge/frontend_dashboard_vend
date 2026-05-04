@@ -782,7 +782,7 @@ function connectMQTT(){
     username:MQTT_USERNAME,password:MQTT_PASSWORD,
   });
   client.on('connect',()=>{
-    setConn('connected','Live');
+    setConn('connected','MQTT Connected');
     log('Connected to live feed','ok');
     client.subscribe('vendbot/order',{qos:1});
     client.subscribe('vendbot/payment',{qos:1});
